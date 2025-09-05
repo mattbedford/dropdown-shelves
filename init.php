@@ -29,8 +29,20 @@ spl_autoload_register(function($class) {
 
 Plugin::boot();
 
+// Add shortcode programmatically. Because we can.
+add_action('storefront_header', function () {
+    echo \CSK\Drilldown\Shortcode::renderShortcode([
+        'location'        => 'primary',
+        'title'           => 'Browse',
+        'offcanvas'       => 'start',
+        'width'           => 360,
+        'killhover'       => '.primary-navigation > ul.menu',
+        'source_selector' => '.primary-navigation > ul.menu',
+    ]);
+}, 45);
 
 
+// Willoverride function call OR shortcode vars if required.
 add_filter('CSK\Drilldown\killhover_selector', fn() => '#site-navigation .menu > ul');
 add_filter('CSK\Drilldown\source_selector',    fn() => '#site-navigation .menu > ul');
 
@@ -56,5 +68,5 @@ function bootstrap_five_fallback() {
 	JS);
     wp_enqueue_script('csk-ddnav-fallback');
 }
-//add_action('wp_enqueue_scripts', 'bootstrap_five_fallback', 25);
+add_action('wp_enqueue_scripts', 'CSK\Drilldown\bootstrap_five_fallback', 25);
 

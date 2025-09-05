@@ -1,89 +1,128 @@
 (function(){
-    // Remove 'no-js' class (theme or our Plugin.php may have added it)
-    document.documentElement.classList.remove('no-js');
 
-    function sanitizeIds(el){
-        el.removeAttribute('id');
-        el.querySelectorAll('[id]').forEach(function(n){ n.removeAttribute('id'); });
+    // Bootstrap fallback
+    if (!(window.bootstrap && window.bootstrap.Offcanvas)) {
+        document.documentElement.classList.add('csk-fallback');
     }
 
-    function mount(root){
-        var stack  = root.querySelector('.stack');
-        var tpl    = root.querySelector('template.dd-source');
-        if(!stack || !tpl) { root.classList.remove('is-cloaked'); return; }
+    function init(root){
+        const title   = root.getAttribute('data-title') || 'Browse';
+        const sourceQ = root.getAttribute('data-source-selector');
+        const stack   = root.querySelector('.stack-inner');
+        if (!sourceQ || !stack) return;
 
-        var level = 0, panels = [];
+        // 1) Get the source UL from <template> (safer than querying live DOM)
+        const tpl = root.querySelector('template.dd-source');
+        const holder = document.createElement('div');
+        holder.innerHTML = tpl ? tpl.innerHTML : '';
+        const sourceUL = holder.querySelector(sourceQ) || holder.querySelector('ul,ol');
+        if (!sourceUL) return;
 
-        function push(title, ul){
-            var panel = document.createElement('section');
-            panel.className = 'panel';
-            panel.setAttribute('role','region');
-            panel.setAttribute('aria-label', title);
+        // 2) State
+        const panels = [];
+        let depth = 0;
 
-            var header = document.createElement('header');
-            var back = document.createElement('button');
-            back.type='button'; back.className='back'; back.textContent='‹ Back';
-            back.disabled = (level===0);
-            back.addEventListener('click', pop);
+        // 3) Build top panel
+        pushPanel(sourceUL, title, true);
 
-            var h = document.createElement('div');
-            h.textContent = title; h.style.fontWeight='600';
-            header.append(back, h);
+        // 4) Reveal
+        root.classList.remove('is-cloaked');
+        root.classList.add('ready');
 
-            var list = ul.cloneNode(true);
-            sanitizeIds(list);
+        // --- helpers
+        function pushPanel(ul, heading, isRoot){
+            const sec = document.createElement('section');
+            sec.className = 'panel';
+            const headHTML = `
+        <header>
+          <button type="button" class="back" ${isRoot ? 'disabled':''}>‹ Back</button>
+          <div style="font-weight:600; flex:1 1 auto;">${escapeHTML(heading || '')}</div>
+        </header>`;
+            sec.innerHTML = headHTML;
 
-            // Intercept only branches; leaves navigate normally
-            list.querySelectorAll(':scope > li.menu-item-has-children > a').forEach(function(a){
-                var sub = a.parentElement.querySelector(':scope > ul.sub-menu');
-                if(!sub) return;
-                a.addEventListener('click', function(e){
-                    e.preventDefault();
-                    push(a.textContent.trim(), sub);
-                });
+            const list = document.createElement('ul');
+            // Walk LIs
+            ul.querySelectorAll(':scope > li').forEach(li => {
+                const a = li.querySelector(':scope > a');
+                const child = li.querySelector(':scope > ul, :scope > ol');
+                if (!a) return;
+
+                const liOut = document.createElement('li');
+                const aOut  = a.cloneNode(true);
+                aOut.removeAttribute('id');
+
+                if (child) {
+                    aOut.classList.add('link-next');
+                    aOut.addEventListener('click', function(ev){
+                        ev.preventDefault();
+                        pushPanel(child, a.textContent.trim(), false);
+                        go(depth + 1);
+                    });
+                }
+
+                // ensure target links inside shelf are clickable normally
+                liOut.appendChild(aOut);
+                list.appendChild(liOut);
             });
 
-            panel.append(header, list);
-            stack.append(panel);
-            panels.push(panel);
-            level++;
-            sync();
+            sec.appendChild(list);
+            stack.appendChild(sec);
+            panels.push(sec);
 
-            var first = panel.querySelector('a');
-            if(first) first.focus();
+            // wire back
+            const back = sec.querySelector('.back');
+            back && back.addEventListener('click', function(){
+                if (depth > 0) go(depth - 1);
+            });
+
+            // set translate after inserting (so width is known)
+            if (panels.length === 1) go(0);
         }
 
-        function pop(){
-            if(level<=1) return;
-            var last = panels.pop();
-            last.remove();
-            level--;
-            sync();
-            var prev = panels[panels.length-1];
-            var first = prev && prev.querySelector('a');
-            if(first) first.focus();
+        function go(n){
+            depth = Math.max(0, Math.min(n, panels.length - 1));
+            stack.style.transform = 'translateX(' + (-depth * 100) + '%)';
+            stack.style.transition = 'transform .2s ease';
+            // optional: aria-hidden housekeeping
+            panels.forEach((p, i) => p.setAttribute('aria-hidden', i === depth ? 'false' : 'true'));
         }
 
-        function sync(){
-            stack.style.transform = 'translateX(-' + ((level-1)*100) + '%)';
-            panels.forEach(function(p, i){ p.setAttribute('aria-hidden', i!==level-1); });
+        function escapeHTML(s){
+            return s.replace(/[&<>"']/g, m => ({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;',"'":'&#039;'}[m]));
         }
-
-        // Root mount from template content (inert; safe to clone)
-        var tmplContent = tpl.content.cloneNode(true);
-        var sourceUL = tmplContent.querySelector('ul.menu');
-        // If template root isn't UL.menu (some themes wrap), find first nested UL
-        if(!sourceUL) sourceUL = tmplContent.querySelector('ul');
-        if(!sourceUL) { root.classList.remove('is-cloaked'); return; }
-
-        push(root.getAttribute('data-title') || 'Browse', sourceUL);
-
-        // Show it in one repaint
-        root.classList.remove('is-cloaked');
-
-        // ESC pops a level
-        root.addEventListener('keydown', function(e){ if(e.key==='Escape') pop(); });
     }
 
-    document.querySelectorAll('[data-ddnav]').forEach(mount);
+    // init all shelves when DOM ready
+    (function whenReady(fn){
+        if (document.readyState === 'loading') document.addEventListener('DOMContentLoaded', fn, {once:true});
+        else fn();
+    })(function(){
+        document.querySelectorAll('.csk-ddnav[data-ddnav="1"]').forEach(init);
+    });
+})();
+
+(function(){
+    function init(root){
+        if (root.dataset.ddnavInit === '1') return;
+        root.dataset.ddnavInit = '1';
+
+        // If a .csk-ddnav somehow ended up inside another, unwrap it (once).
+        var inner = root.querySelector(':scope > .csk-ddnav');
+        if (inner){
+            while (inner.firstChild) root.insertBefore(inner.firstChild, inner);
+            inner.remove();
+        }
+
+        // Make sure the offcanvas inherits the same width var (safety net)
+        var oc = root.closest('.offcanvas');
+        if (oc){
+            var w = getComputedStyle(root).getPropertyValue('--ddnav-width') || '360px';
+            oc.style.setProperty('--ddnav-width', w.trim());
+            oc.style.overflow = 'hidden';
+        }
+    }
+
+    document.addEventListener('DOMContentLoaded', function(){
+        document.querySelectorAll('.csk-ddnav[data-ddnav]').forEach(init);
+    });
 })();
