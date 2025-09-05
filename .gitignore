@@ -1,0 +1,25 @@
+# OS cruft
+.DS_Store
+Thumbs.db
+
+# Editors / IDEs
+.vscode/
+.idea/
+*.swp
+*.swo
+
+# Node / build output (if you add a build step later)
+node_modules/
+dist/
+build/
+.cache/
+*.map
+
+# PHP tooling
+vendor/
+composer.lock
+
+# Logs & env
+*.log
+.env
+.env.*

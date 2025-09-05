@@ -1,0 +1,38 @@
+/* Base + cloak */
+.csk-ddnav {
+    --ddnav-width: 360px;
+    position: relative;
+    background: var(--bs-body-bg, #fff);
+    border-right: 1px solid var(--bs-border-color, #e5e7eb);
+    width: min(var(--ddnav-width), 92vw);
+    height: 100%;
+    overflow: hidden;
+}
+.csk-ddnav.is-cloaked { visibility: hidden; }
+
+/* Stack + panels */
+.csk-ddnav .stack { display: flex; height: 100%; will-change: transform; transition: transform .25s ease; }
+.csk-ddnav .panel { flex: 0 0 100%; height: 100%; overflow-y: auto; border-right: 1px solid var(--bs-border-color, #eee); }
+.csk-ddnav .panel > header { position: sticky; top: 0; z-index: 10; display: flex; align-items: center; gap: .5rem; padding: .75rem 1rem; background: inherit; border-bottom: 1px solid var(--bs-border-color, #eee); }
+.csk-ddnav .panel > header .back { border: 0; background: transparent; font: inherit; cursor: pointer; padding: .25rem .5rem; }
+.csk-ddnav ul { list-style: none; padding: 0; margin: 0; }
+.csk-ddnav li > a { display: flex; align-items: center; justify-content: space-between; padding: .65rem 1rem; text-decoration: none; color: inherit; }
+.csk-ddnav li.menu-item-has-children > a::after { content: '›'; }
+
+/* Offcanvas fit */
+.offcanvas .csk-ddnav { width: 100%; height: 100%; border-right: 0; }
+
+/* Kill hover/focus dropdowns on the original WP nav to prevent flashes */
+.primary-navigation > ul.menu ul.sub-menu { display: none !important; }
+.primary-navigation > ul.menu li:hover > ul.sub-menu,
+.primary-navigation > ul.menu li:focus-within > ul.sub-menu {
+    display: none !important;
+    opacity: 0 !important;
+    visibility: hidden !important;
+    pointer-events: none !important;
+}
+
+/* Respect reduced motion */
+@media (prefers-reduced-motion: reduce) {
+    .csk-ddnav .stack { transition: none; }
+}
