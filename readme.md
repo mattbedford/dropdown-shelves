@@ -1,5 +1,5 @@
 # Dropdown Shelves
-### Ideated fore Storefront-themed WP/Woo installs, but may work for others too.
+### Ideated for Storefront-themed WP/Woo installs, but may work for others too.
 
 ## Features
 - No duplicate IDs: The menu HTML is placed inside a <template> (inert), which the JS clones—so you won’t trip on duplicate IDs. 
