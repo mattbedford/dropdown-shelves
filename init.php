@@ -28,3 +28,33 @@ spl_autoload_register(function($class) {
 });
 
 Plugin::boot();
+
+
+
+add_filter('CSK\Drilldown\killhover_selector', fn() => '#site-navigation .menu > ul');
+add_filter('CSK\Drilldown\source_selector',    fn() => '#site-navigation .menu > ul');
+
+// Enable in case of no bootstrap 5
+function bootstrap_five_fallback() {
+    wp_register_script('csk-ddnav-fallback', false, [], null, true);
+    wp_add_inline_script('csk-ddnav-fallback', <<<JS
+	(function(){
+	  var btns = document.querySelectorAll('[data-bs-toggle="offcanvas"]');
+	  if (window.bootstrap && window.bootstrap.Offcanvas) return; // Bootstrap 5 present; do nothing.
+	  btns.forEach(function(btn){
+		var sel = btn.getAttribute('data-bs-target') || btn.getAttribute('href');
+		var panel = sel ? document.querySelector(sel) : null;
+		if (!panel) return;
+		btn.addEventListener('click', function(e){
+		  e.preventDefault();
+		  panel.classList.toggle('show');
+		  panel.style.visibility = panel.classList.contains('show') ? 'visible' : 'hidden';
+		  document.documentElement.classList.toggle('csk-offcanvas-open', panel.classList.contains('show'));
+		});
+	  });
+	})();
+	JS);
+    wp_enqueue_script('csk-ddnav-fallback');
+}
+//add_action('wp_enqueue_scripts', 'bootstrap_five_fallback', 25);
+
