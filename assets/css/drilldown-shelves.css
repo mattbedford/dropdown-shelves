@@ -1,153 +1,101 @@
-/* ================================
-   CSK Drilldown — clean / deduped
-   ================================ */
+/* -------- Off-canvas shell (no Bootstrap) -------- */
+.csk-shelf { position: fixed; inset: 0; z-index: 1075; display: grid;
+    grid-template-columns: auto; grid-template-rows: 1fr; pointer-events: none; }
+.csk-shelf .csk-shelf-backdrop { position: fixed; inset: 0; background: rgba(0,0,0,.55);
+    z-index: 1065; opacity: 0; transition: opacity .2s ease; }
+.csk-shelf .csk-shelf-panel { position: fixed; top: 0; bottom: 0; left: 0;
+    width: min(var(--ddnav-width, 360px), 92vw); max-width: 100vw;
+    background: #fff; box-shadow: 0 10px 30px rgba(0,0,0,.18);
+    transform: translateX(-100%); transition: transform .2s ease; z-index: 1076; }
 
-/* Make BS offcanvas body host our layout */
-.offcanvas .offcanvas-body { display:flex; flex-direction:column; padding:0; }
+.csk-shelf.is-open { pointer-events: auto; }
+.csk-shelf.is-open .csk-shelf-backdrop { opacity: 1; }
+.csk-shelf.is-open .csk-shelf-panel { transform: translateX(0); }
 
-/* Layering: keep shelf above backdrops/headers */
-.offcanvas-backdrop { z-index: 1070 !important; }
-.offcanvas { z-index: 1080; }
+/* Prevent page scroll while open */
+html.csk-shelf-lock { overflow: hidden; }
+
+/* -------- Drilldown internals -------- */
+.csk-ddnav { display: flex; flex-direction: column; height: 100%; }
+.csk-ddnav.is-cloaked { visibility: hidden; }
+.csk-ddnav.ready { visibility: visible; }
+
+.csk-ddnav .stack { position: relative; flex: 1 1 auto; overflow: hidden; }
+.csk-ddnav .stack-inner { display: flex; height: 100%; width: 100%; transform: translateX(0); will-change: transform; transition: transform .2s ease; }
+.csk-ddnav .panel { flex: 0 0 100%; min-width: 100%; max-width: 100%; height: 100%; overflow: auto; border-right: 1px solid rgba(0,0,0,.06); background: #fff; }
+.csk-ddnav .panel > header { position: sticky; top: 0; display: flex; align-items: center; gap: .5rem; padding: .75rem 1rem; border-bottom: 1px solid rgba(0,0,0,.08); background: inherit; z-index: 1; }
+.csk-ddnav .panel > header .dd-back { border: 0; background: none; font: inherit; cursor: pointer; padding: .25rem .5rem; opacity: .7; }
+.csk-ddnav .panel > header .dd-back:disabled { opacity: .35; cursor: default; }
+.csk-ddnav .panel > ul { margin: 0; padding: 0; list-style: none; }
+
+/* Menu rows */
+.csk-ddnav .panel li { margin: 0; }
+.csk-ddnav .panel li + li a { border-top: 1px solid rgba(0,0,0,.06); }
+.csk-ddnav .panel a {
+    display: flex; align-items: center; justify-content: space-between;
+    padding: .75rem 1rem; text-decoration: none; color: inherit;
+}
+.csk-ddnav .panel a.link-next::after { content: '›'; font-weight: 600; margin-left: .5rem; }
+
+/* Neutralize theme dropdowns *inside* shelf */
+.csk-ddnav ul.sub-menu { display: block !important; visibility: visible !important; opacity: 1 !important; }
+.csk-ddnav li { float: none !important; position: static !important; }
+
+/* Keep shelf above site backdrops, headers, etc */
 #masthead,
 .storefront-primary-navigation,
-.storefront-primary-navigation .col-full { position:relative; z-index:1065; }
+.storefront-primary-navigation .col-full { position: relative; z-index: 10; }
 
-/* While open (fallback mode), block page clicks except shelf */
-html.csk-offcanvas-open #masthead { pointer-events:none; }
-html.csk-offcanvas-open .offcanvas { pointer-events:auto; }
+/* Hide original primary navs (Storefront) */
+#site-navigation.main-navigation,
+.main-navigation,
+.storefront-primary-navigation > .col-full > .menu { display: none !important; }
 
-/* Shelf root */
-.csk-ddnav{
-    --ddnav-width: 360px;
-    display:flex; flex-direction:column;
-    width:min(var(--ddnav-width), 92vw);
-    height:100%;
-    max-height:100vh;
-    background: var(--bs-body-bg, #fff);
-    border-right:1px solid var(--bs-border-color, #e5e7eb);
-    overflow:hidden;
-}
-.csk-ddnav.is-cloaked{ visibility:hidden; }
-.csk-ddnav.ready{ visibility:visible; }
+/* Minimal button look if your theme doesn’t style .btn */
+.btn { display:inline-block; padding:.5rem .75rem; border:1px solid #d0d7de; background:#fff; border-radius:.375rem; cursor:pointer; }
+.btn:focus { outline: 2px solid #5b9dd9; outline-offset: 2px; }
+.btn.btn-outline-secondary { background:#fff; }
 
-/* Neutralize theme menu styles inside shelf ONLY */
-.csk-ddnav ul{ list-style:none; margin:0; padding:0; }
-.csk-ddnav li{ float:none !important; position:static !important; margin:0; padding:0; }
-.csk-ddnav a{
-    display:flex; align-items:center; justify-content:space-between;
-    text-decoration:none; padding:.75rem 1rem; color:inherit;
-}
-.csk-ddnav li + li a{ border-top:1px solid rgba(0,0,0,.06); }
-.csk-ddnav ul.sub-menu{
-    display:block !important; visibility:visible !important; opacity:1 !important; overflow:visible !important;
-}
-
-/* Flex “carousel” stack */
-.csk-ddnav .stack{ position:relative; flex:1 1 auto; overflow:hidden; min-height:1px; }
-.csk-ddnav .stack-inner{ display:flex; width:100%; height:100%; transition:transform .25s ease; will-change:transform; }
-.csk-ddnav .panel{ flex:0 0 100%; min-width:100%; max-width:100%; overflow:auto; background:#fff; }
-.csk-ddnav .panel > header{
-    position:sticky; top:0; z-index:10;
-    display:flex; align-items:center; gap:.5rem;
-    padding:.75rem 1rem; background:inherit;
-    border-bottom:1px solid rgba(0,0,0,.06);
-}
-.csk-ddnav .panel > header .back{ min-width:3.25rem; border:0; background:transparent; font:inherit; cursor:pointer; }
-.csk-ddnav .panel > ul{ margin:0; padding:0; }
-/* Arrow for items with children (added by JS via .link-next) */
-.csk-ddnav .link-next::after{ content:'›'; font-weight:600; margin-left:.5rem; }
-
-/* Optional: hide original nav on small screens only */
-@media (max-width:1024px){
-    .primary-navigation{ display:none !important; }
-}
-
-
-/* Kill hover/focus dropdowns on the original WP nav to prevent flashes */
-.primary-navigation > ul.menu ul.sub-menu{ display:none !important; }
-.primary-navigation > ul.menu li:hover > ul.sub-menu,
-.primary-navigation > ul.menu li:focus-within > ul.sub-menu{
-    display:none !important; opacity:0 !important; visibility:hidden !important; pointer-events:none !important;
-}
-
-/* ---------- No-Bootstrap fallback (scoped) ---------- */
-/* Only applies when your tiny fallback script adds html.csk-fallback */
-html.csk-fallback .offcanvas{
-    position:fixed; top:0; bottom:0;
-    background:#fff; color:inherit;
-    visibility:hidden; transform:translateX(-100%);
-    transition:transform .3s ease-in-out, visibility 0s linear .3s;
-    box-shadow:0 10px 30px rgba(0,0,0,.15);
-}
-html.csk-fallback .offcanvas.offcanvas-end{ right:0; left:auto; transform:translateX(100%); }
-html.csk-fallback .offcanvas.show{ transform:none; visibility:visible; transition:transform .3s ease-in-out; }
-html.csk-fallback.csk-offcanvas-open{ overflow:hidden; }
-html.csk-fallback.csk-offcanvas-open::before{
-    content:""; position:fixed; inset:0; background:rgba(0,0,0,.5); z-index:2070;
-}
-
-/* Put our shelf above everything (but below WP admin bar) */
-.offcanvas { z-index: 2000; }
-.offcanvas-backdrop { z-index: 1990 !important; }
-
-html.admin-bar .offcanvas{
-    top:32px; height:calc(100% - 32px);
-}
+/* Shelf container is fixed-position with inset:0; just bump its top when admin bar exists */
+body.logged-in.admin-bar .csk-shelf .csk-shelf-panel { padding-top: 32px; }
 @media (max-width:782px){
-    html.admin-bar .offcanvas{
-        top:46px; height:calc(100% - 46px);
-    }
+    body.logged-in.admin-bar .csk-shelf .csk-shelf-panel { padding-top: 46px; }
 }
 
-/* Reduced motion */
-@media (prefers-reduced-motion: reduce){
-    .csk-ddnav .stack-inner{ transition:none; }
+/* Make sure the Back button is always visible and clickable */
+.csk-shelf .dd-back{
+    appearance:none;
+    background:transparent;
+    border:0;
+    color: inherit;          /* don’t go white-on-white */
+    padding:.25rem .5rem;
+    min-width:2.25rem;       /* keeps the chevron tappable */
+    line-height:1;
+    cursor:pointer;
+    opacity: .75;
+}
+.csk-shelf .dd-back[disabled]{
+    cursor: default;
+    opacity:.45;             /* dim, but don’t hide */
+    visibility: visible;     /* override any theme rules */
 }
 
-
-/*Hide legacy bits*/
-/* Hide Storefront fallback menu that sits next to the shelf */
-.storefront-primary-navigation .col-full > .menu,
-.storefront-primary-navigation .col-full > .nav-menu,
-.storefront-primary-navigation .col-full > ul.menu,
-.storefront-primary-navigation .col-full > div.menu,
-.storefront-primary-navigation .col-full > :not(.offcanvas).menu {
-    display: none !important;
+/* Ensure the header isn’t cropping it */
+.csk-shelf .panel > header{
+    display:flex;
+    align-items:center;
+    gap:.5rem;
+    position: sticky;
+    top: 0;
+    z-index: 1;
+    background: inherit;
 }
 
-/* If the theme also outputs a direct UL under #site-navigation, hide it */
-#site-navigation > ul.menu,
-#site-navigation > .menu {
-    display: none !important;
+/* Hide Back when we're on the root panel */
+.csk-ddnav[data-depth="0"] .dd-back { display: none; }
+
+/* (optional) looks for Back when shown */
+.csk-ddnav .dd-back{
+    appearance:none; background:transparent; border:0; padding:.25rem .5rem;
+    min-width:2.5rem; line-height:1; cursor:pointer; opacity:.85;
 }
-
-/* Keep only the menu **inside** our shelf visible */
-.offcanvas .csk-ddnav ul.menu,
-.offcanvas .csk-ddnav ul.sub-menu {
-    display: block !important;
-    visibility: visible !important;
-    opacity: 1 !important;
-}
-
-/* When the shelf is open, also hide any sibling fallback menu (extra belt-and-braces) */
-.storefront-primary-navigation .col-full .offcanvas.show ~ .menu {
-    display: none !important;
-}
-
-/* Offcanvas must clip its children & take the same width as the shelf */
-.offcanvas{ width:var(--ddnav-width,360px); overflow:hidden; }
-
-/* Lift shelf above any theme overlays; keep backdrop lower */
-.offcanvas{ z-index:1085; }
-.offcanvas-backdrop{ z-index:1080 !important; }
-html.csk-offcanvas-open::before{ z-index:1075; } /* your JS fallback dimmer */
-
-/* Hide legacy menus with more brute force (Storefront prints a few) */
-nav#site-navigation.main-navigation,
-.storefront-primary-navigation > .col-full > .menu,
-.storefront-primary-navigation .col-full .offcanvas ~ .menu{
-    display:none !important;
-}
-
-/* Only one drilldown root – if something ever nests, flatten it visually */
-.csk-ddnav .csk-ddnav{ display:contents; } /* non-destructive; prevents double UI */
