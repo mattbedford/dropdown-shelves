@@ -31,11 +31,20 @@
 ```
 
 - Apply the filters to the specific theme you're using. The filters are:
-`add_filter('CSK\Drilldown\killhover_selector', fn() => '.main-navigation > ul.menu');`
-*Scope for CSS hover overrides: where to turn off the theme’s hover/focus dropdown behavior. This should point at the container the theme targets in its CSS rules like X li:hover > ul.sub-menu { … }. We inject a tiny <style> scoped to that selector so only that nav is affected*
+```php
+add_filter('CSK\Drilldown\killhover_selector', fn() => '.main-navigation > ul.menu');
+//Scope for CSS hover overrides: where to turn off the theme’s hover/focus dropdown behavior. 
+// This should point at the container the theme targets in its CSS rules like 
+"X li:hover > ul.sub-menu { … }" 
+// We inject a tiny <style> scoped to that selector so only that nav is affected
+```
 
-`add_filter('CSK\Drilldown\source_selector',  fn() => 'nav#site-navigation ul, ul.primary-menu');`
-*Dom picker for the <ul> element we're targetting: where our JS should find the actual nested <ul> to clone into panels. This must match the <ul> that contains your .menu-item / .menu-item-has-children LIs, inside our <template>*
+```php
+add_filter('CSK\Drilldown\source_selector',  fn() => 'nav#site-navigation ul, ul.primary-menu');`
+//Dom picker for the <ul> element we're targetting.
+// where our JS should find the actual nested <ul> to clone into panels. 
+// This must match the <ul> that contains the .menu-item / .menu-item-has-children LIs, inside our <template>
+```
 
 > [!TIP]
 > These two are different because the CSS needs a scope large enough to catch the theme’s :hover rules but not so large that you nuke other menus.
