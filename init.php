@@ -5,6 +5,7 @@
  * Version:     0.2.0
  * Author:      Matt Bedford
  * Author Uri: https://mattbedford.com
+ * Plugin Uri: https://github.com/mattbedford/dropdown-shelves.git
  */
 
 namespace CSK\Drilldown;
